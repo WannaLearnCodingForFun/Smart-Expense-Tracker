@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Expense Tracker</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-brand">
+      <span class="logo">💰</span>
+      <h1>Smart Expense Tracker</h1>
+    </div>
+    <div class="nav-actions">
+      <button id="themeToggle" class="btn-icon" title="Toggle theme" aria-label="Toggle theme">
+        <span class="theme-icon">🌙</span>
+      </button>
+      <button id="exportCsv" class="btn btn-secondary">Export CSV</button>
+    </div>
+  </nav>
+
+  <main class="container">
+    <section class="dashboard">
+      <h2 class="section-title">Dashboard</h2>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">📊</div>
+          <div class="stat-content">
+            <span class="stat-label">Total Expenses</span>
+            <span id="totalExpenses" class="stat-value">$0.00</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📅</div>
+          <div class="stat-content">
+            <span class="stat-label">This Month</span>
+            <span id="monthlyExpenses" class="stat-value">$ 0.00</span>
+          </div>
+        </div>
+        <div class="stat-card stat-card-budget">
+          <div class="stat-icon">🎯</div>
+          <div class="stat-content">
+            <span class="stat-label">Monthly Budget</span>
+            <span id="budgetDisplay" class="stat-value">$2000</span>
+            <span id="budgetWarning" class="budget-warning hidden"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="budget-setter">
+        <label for="monthlyBudget">Set Monthly Budget:</label>
+        <input type="number" id="monthlyBudget" placeholder="2000" min="0" step="100">
+        <button id="saveBudget" class="btn btn-small">Save</button>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3>Category Distribution</h3>
+          <div class="chart-container">
+            <canvas id="pieChart"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <h3>Monthly Spending</h3>
+          <div class="chart-container">
+            <canvas id="barChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="form-section">
+      <h2 class="section-title" id="formTitle">Add New Expense</h2>
+      <form id="expenseForm" class="expense-form">
+        <input type="hidden" id="expenseId" value="">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="amount">Amount ($) *</label>
+            <input type="number" id="amount" required min="0" step="0.01" placeholder="0.00">
+            <span class="error-msg" id="amountError"></span>
+          </div>
+          <div class="form-group">
+            <label for="category">Category *</label>
+            <select id="category" required>
+              <option value="">Select category</option>
+              <option value="Food">Food</option>
+              <option value="Travel">Travel</option>
+              <option value="Shopping">Shopping</option>
+              <option value="Bills">Bills</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="description">Description</label>
+          <input type="text" id="description" placeholder="Brief description (optional)">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="date">Date *</label>
+            <input type="date" id="date" required>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="submitBtn">Add Expense</button>
+            <button type="button" class="btn btn-outline" id="cancelBtn" style="display: none;">Cancel</button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <section class="filters-section">
+      <h2 class="section-title">All Expenses</h2>
+      <div class="filters">
+        <div class="filter-group">
+          <label for="filterCategory">Category</label>
+          <select id="filterCategory">
+            <option value="all">All Categories</option>
+            <option value="Food">Food</option>
+            <option value="Travel">Travel</option>
+            <option value="Shopping">Shopping</option>
+            <option value="Bills">Bills</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="filterStartDate">From Date</label>
+          <input type="date" id="filterStartDate">
+        </div>
+        <div class="filter-group">
+          <label for="filterEndDate">To Date</label>
+          <input type="date" id="filterEndDate">
+        </div>
+        <button id="applyFilters" class="btn btn-secondary">Apply Filters</button>
+        <button id="clearFilters" class="btn btn-outline">Clear</button>
+      </div>
+    </section>
+    <section class="table-section">
+      <div id="loadingIndicator" class="loading hidden">
+        <div class="spinner"></div>
+        <p>Loading expenses...</p>
+      </div>
+      <div id="emptyState" class="empty-state hidden">
+        <p>No expenses yet. Add your first expense above!</p>
+      </div>
+      <div class="table-wrapper" id="tableWrapper">
+        <table class="expenses-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Amount</th>
+              <th>Category</th>
+              <th>Description</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="expensesTableBody">
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
