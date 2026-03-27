@@ -14,10 +14,12 @@
       <h1>Smart Expense Tracker</h1>
     </div>
     <div class="nav-actions">
+      <span id="welcomeUser" class="welcome-user"></span>
       <button id="themeToggle" class="btn-icon" title="Toggle theme" aria-label="Toggle theme">
         <span class="theme-icon">🌙</span>
       </button>
       <button id="exportCsv" class="btn btn-secondary">Export CSV</button>
+      <button id="logoutBtn" class="btn btn-outline">Logout</button>
     </div>
   </nav>
 
@@ -125,6 +127,14 @@
             <option value="Other">Other</option>
           </select>
         </div>
+
+        <!-- <div>
+          <section class="filter-group">
+            <label for="filterDescription">Description</label>
+            <input type="text" id="filterDescription" placeholder="Search by description">
+          </section>
+        </div>  -->
+
         <div class="filter-group">
           <label for="filterStartDate">From Date</label>
           <input type="date" id="filterStartDate">

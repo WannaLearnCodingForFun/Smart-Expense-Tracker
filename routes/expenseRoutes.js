@@ -7,7 +7,7 @@ const Expense = require('../models/Expense');
 router.get('/', async (req, res, next) => {
   try {
     const { category, startDate, endDate } = req.query;
-    const filter = {};
+    const filter = { user: req.user.id };
 
     // Filter by category if provided
     if (category && category !== 'all') {
@@ -46,6 +46,7 @@ router.get('/stats', async (req, res, next) => {
 
     // Total expenses - ALL TIME (always)
     const totalPipeline = [
+      { $match: { user: req.user.id } },
       { $group: { _id: null, total: { $sum: '$amount' } } }
     ];
     const totalResult = await Expense.aggregate(totalPipeline);
@@ -53,7 +54,7 @@ router.get('/stats', async (req, res, next) => {
 
     // Monthly total for selected month (or current month)
     const monthlyTotalPipeline = [
-      { $match: dateMatch },
+      { $match: { user: req.user.id, ...dateMatch } },
       { $group: { _id: null, total: { $sum: '$amount' } } }
     ];
     const monthlyTotalResult = await Expense.aggregate(monthlyTotalPipeline);
@@ -66,7 +67,7 @@ router.get('/stats', async (req, res, next) => {
     sixMonthsAgo.setHours(0, 0, 0, 0);
 
     const monthlyPipeline = [
-      { $match: { date: { $gte: sixMonthsAgo } } },
+      { $match: { user: req.user.id, date: { $gte: sixMonthsAgo } } },
       {
         $group: {
           _id: {
@@ -82,6 +83,7 @@ router.get('/stats', async (req, res, next) => {
 
     // Category distribution (pie chart) - all-time for better overview
     const categoryPipeline = [
+      { $match: { user: req.user.id } },
       { $group: { _id: '$category', total: { $sum: '$amount' } } },
       { $sort: { total: -1 } }
     ];
@@ -104,7 +106,7 @@ router.get('/stats', async (req, res, next) => {
  */
 router.get('/:id', async (req, res, next) => {
   try {
-    const expense = await Expense.findById(req.params.id);
+    const expense = await Expense.findOne({ _id: req.params.id, user: req.user.id });
     if (!expense) {
       return res.status(404).json({ error: 'Expense not found' });
     }
@@ -130,6 +132,7 @@ router.post('/', async (req, res, next) => {
     }
 
     const expense = new Expense({
+      user: req.user.id,
       amount: parseFloat(amount),
       category,
       description: description || '',
@@ -157,8 +160,8 @@ router.put('/:id', async (req, res, next) => {
     if (description !== undefined) updateData.description = description;
     if (date !== undefined) updateData.date = new Date(date);
 
-    const expense = await Expense.findByIdAndUpdate(
-      req.params.id,
+    const expense = await Expense.findOneAndUpdate(
+      { _id: req.params.id, user: req.user.id },
       updateData,
       { new: true, runValidators: true }
     );
@@ -179,7 +182,7 @@ router.put('/:id', async (req, res, next) => {
  */
 router.delete('/:id', async (req, res, next) => {
   try {
-    const expense = await Expense.findByIdAndDelete(req.params.id);
+    const expense = await Expense.findOneAndDelete({ _id: req.params.id, user: req.user.id });
     if (!expense) {
       return res.status(404).json({ error: 'Expense not found' });
     }

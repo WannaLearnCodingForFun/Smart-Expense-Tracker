@@ -9,6 +9,11 @@ const mongoose = require('mongoose');
 const CATEGORIES = ['Food', 'Travel', 'Shopping', 'Bills', 'Other'];
 
 const expenseSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: [true, 'User is required']
+  },
   amount: {
     type: Number,
     required: [true, 'Amount is required'],
@@ -37,6 +42,7 @@ const expenseSchema = new mongoose.Schema({
 });
 
 // Index for faster queries by date and category
+expenseSchema.index({ user: 1, date: -1 });
 expenseSchema.index({ date: -1 });
 expenseSchema.index({ category: 1 });
 

@@ -6,6 +6,7 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const Expense = require('../models/Expense');
+const User = require('../models/User');
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/expense-tracker';
 
@@ -25,7 +26,22 @@ async function seed() {
     await mongoose.connect(MONGODB_URI);
     console.log('Connected to MongoDB');
 
-    const result = await Expense.insertMany(sampleExpenses);
+    let user = await User.findOne({ email: 'demo@example.com' });
+    if (!user) {
+      user = await User.create({
+        username: 'demo-user',
+        email: 'demo@example.com',
+        password: 'demo1234'
+      });
+      console.log('Created demo user: demo@example.com / demo1234');
+    }
+
+    const expensesWithUser = sampleExpenses.map((expense) => ({
+      ...expense,
+      user: user._id
+    }));
+
+    const result = await Expense.insertMany(expensesWithUser);
     console.log(`✅ Added ${result.length} sample expenses`);
 
     process.exit(0);

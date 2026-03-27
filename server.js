@@ -9,7 +9,10 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 
+const Expense = require('./models/Expense');
+const authRoutes = require('./routes/authRoutes');
 const expenseRoutes = require('./routes/expenseRoutes');
+const authMiddleware = require('./middleware/authMiddleware');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -23,11 +26,23 @@ app.use(express.json()); // Parse JSON request bodies
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ============ Routes ============
-app.use('/api/expenses', expenseRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/expenses', authMiddleware, expenseRoutes);
+
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/api/debug/all-expenses', async (req, res, next) => {
+    try {
+      const expenses = await Expense.find({}).populate('user', 'username email').sort({ createdAt: -1 });
+      res.json(expenses);
+    } catch (error) {
+      next(error);
+    }
+  });
+}
 
 // Serve index.html for root
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
 // ============ MongoDB Connection ============

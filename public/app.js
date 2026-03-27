@@ -1,22 +1,14 @@
-/**
- * Smart Expense Tracker - Frontend Application
- * Vanilla JavaScript - No frameworks
- */
-
-// ============ Configuration ============
 const API_BASE = '/api/expenses';
-
-// Chart.js color palette
+const TOKEN_KEY = 'expense_tracker_token';
+const USER_KEY = 'expense_tracker_user';
 const CHART_COLORS = [
   '#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6',
   '#06b6d4', '#ec4899', '#84cc16'
 ];
 
-// ============ State ============
 let pieChart = null;
 let barChart = null;
 
-// ============ DOM Elements ============
 const elements = {
   totalExpenses: document.getElementById('totalExpenses'),
   monthlyExpenses: document.getElementById('monthlyExpenses'),
@@ -46,11 +38,18 @@ const elements = {
   themeToggle: document.getElementById('themeToggle'),
   themeIcon: document.querySelector('.theme-icon'),
   exportCsv: document.getElementById('exportCsv'),
+  logoutBtn: document.getElementById('logoutBtn'),
+  welcomeUser: document.getElementById('welcomeUser'),
   toastContainer: document.getElementById('toastContainer')
 };
 
 // ============ Initialize ============
 document.addEventListener('DOMContentLoaded', () => {
+  if (!isAuthenticated()) {
+    redirectToLogin();
+    return;
+  }
+  showLoggedInUser();
   loadTheme();
   setDefaultDate();
   loadBudget();
@@ -65,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
 async function fetchExpenses(filters = {}) {
   const params = new URLSearchParams(filters).toString();
   const url = params ? `${API_BASE}?${params}` : API_BASE;
-  const res = await fetch(url);
+  const res = await authFetch(url);
   if (!res.ok) throw new Error('Failed to fetch expenses');
   return res.json();
 }
@@ -75,13 +74,13 @@ async function fetchStats(month, year) {
   if (month) params.append('month', month);
   if (year) params.append('year', year);
   const url = params.toString() ? `${API_BASE}/stats?${params}` : `${API_BASE}/stats`;
-  const res = await fetch(url);
+  const res = await authFetch(url);
   if (!res.ok) throw new Error('Failed to fetch stats');
   return res.json();
 }
 
 async function createExpense(data) {
-  const res = await fetch(API_BASE, {
+  const res = await authFetch(API_BASE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
@@ -92,7 +91,7 @@ async function createExpense(data) {
 }
 
 async function updateExpense(id, data) {
-  const res = await fetch(`${API_BASE}/${id}`, {
+  const res = await authFetch(`${API_BASE}/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
@@ -103,7 +102,7 @@ async function updateExpense(id, data) {
 }
 
 async function deleteExpense(id) {
-  const res = await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
+  const res = await authFetch(`${API_BASE}/${id}`, { method: 'DELETE' });
   const result = await res.json();
   if (!res.ok) throw new Error(result.error || 'Failed to delete');
   return result;
@@ -198,6 +197,9 @@ function setupEventListeners() {
   elements.saveBudget.addEventListener('click', saveBudget);
   elements.themeToggle.addEventListener('click', toggleTheme);
   elements.exportCsv.addEventListener('click', exportToCsv);
+  if (elements.logoutBtn) {
+    elements.logoutBtn.addEventListener('click', logout);
+  }
 }
 
 function handleFormSubmit(e) {
@@ -235,7 +237,7 @@ function handleFormSubmit(e) {
 
 async function handleEdit(id) {
   try {
-    const res = await fetch(`${API_BASE}/${id}`);
+    const res = await authFetch(`${API_BASE}/${id}`);
     const expense = await res.json();
     if (!res.ok) throw new Error(expense.error || 'Not found');
 
@@ -496,6 +498,54 @@ async function exportToCsv() {
 }
 
 // ============ Utilities ============
+
+function getToken() {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+function isAuthenticated() {
+  return Boolean(getToken());
+}
+
+function redirectToLogin() {
+  window.location.href = '/login.html';
+}
+
+function logout() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+  redirectToLogin();
+}
+
+function showLoggedInUser() {
+  if (!elements.welcomeUser) return;
+  try {
+    const user = JSON.parse(localStorage.getItem(USER_KEY) || '{}');
+    elements.welcomeUser.textContent = user.username ? `Hi, ${user.username}` : '';
+  } catch (error) {
+    elements.welcomeUser.textContent = '';
+  }
+}
+
+async function authFetch(url, options = {}) {
+  const token = getToken();
+  if (!token) {
+    redirectToLogin();
+    throw new Error('Not authenticated');
+  }
+
+  const headers = {
+    ...(options.headers || {}),
+    Authorization: `Bearer ${token}`
+  };
+
+  const response = await fetch(url, { ...options, headers });
+  if (response.status === 401) {
+    logout();
+    throw new Error('Session expired. Please log in again.');
+  }
+  return response;
+}
 
 function formatCurrency(amount) {
   return '$' + parseFloat(amount).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
