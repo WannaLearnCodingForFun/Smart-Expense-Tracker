@@ -31,6 +31,38 @@ app.use('/api/auth', authRoutes);
 app.use('/api/expenses', authMiddleware, expenseRoutes);
 app.use('/api/family', familyRoutes);
 
+// API index route: quick backend route reference
+app.get('/api', (req, res) => {
+  res.json({
+    name: 'Smart Expense Tracker API',
+    status: 'ok',
+    routes: {
+      auth: {
+        register: 'POST /api/auth/register',
+        login: 'POST /api/auth/login'
+      },
+      expenses: {
+        list: 'GET /api/expenses',
+        stats: 'GET /api/expenses/stats',
+        getOne: 'GET /api/expenses/:id',
+        create: 'POST /api/expenses',
+        update: 'PUT /api/expenses/:id',
+        remove: 'DELETE /api/expenses/:id'
+      },
+      family: {
+        list: 'GET /api/family',
+        add: 'POST /api/family/add',
+        remove: 'DELETE /api/family/:memberId',
+        summary: 'GET /api/family/summary/expenses'
+      },
+      debug: process.env.NODE_ENV !== 'production'
+        ? ['GET /api/debug/all-expenses']
+        : []
+    },
+    authNote: 'All /api/expenses and /api/family routes require Authorization: Bearer <token>'
+  });
+});
+
 if (process.env.NODE_ENV !== 'production') {
   app.get('/api/debug/all-expenses', async (req, res, next) => {
     try {

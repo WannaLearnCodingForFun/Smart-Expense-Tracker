@@ -43,7 +43,9 @@ const elements = {
   familyEmail: document.getElementById('familyEmail'),
   addFamilyBtn: document.getElementById('addFamilyBtn'),
   familyList: document.getElementById('familyList'),
+  familyStatusText: document.getElementById('familyStatusText'),
   familySummaryText: document.getElementById('familySummaryText'),
+  familyIndividualList: document.getElementById('familyIndividualList'),
   toastContainer: document.getElementById('toastContainer')
 };
 
@@ -637,10 +639,22 @@ async function loadFamilySummary() {
   if (!elements.familySummaryText) return;
   try {
     const summary = await fetchFamilySummary();
+
+    if (elements.familyStatusText) {
+      elements.familyStatusText.textContent = summary.currentUserInSomeFamily
+        ? 'Family status: In a family'
+        : 'Family status: Not in a family';
+    }
+
     elements.familySummaryText.textContent =
       `Family size: ${summary.familySize} | Combined expenses: ${formatCurrency(summary.totalExpenses)} | Entries: ${summary.totalEntries}`;
+
+    renderIndividualFamilyBreakdown(summary.individualBreakdown || []);
   } catch (error) {
     elements.familySummaryText.textContent = 'Unable to load family summary.';
+    if (elements.familyStatusText) {
+      elements.familyStatusText.textContent = 'Family status: Unknown';
+    }
   }
 }
 
@@ -658,6 +672,7 @@ function renderFamilyMembers(members) {
       <div>
         <strong>${member.username}</strong>
         <span>${member.email}</span>
+        <span>${member.isInSomeFamily ? 'In a family' : 'Not in a family'}</span>
       </div>
       <button class="btn btn-outline btn-small family-remove-btn" data-id="${member._id}">Remove</button>
     `;
@@ -675,6 +690,32 @@ function renderFamilyMembers(members) {
         showToast(error.message, 'error');
       }
     });
+  });
+}
+
+function renderIndividualFamilyBreakdown(items) {
+  if (!elements.familyIndividualList) return;
+  elements.familyIndividualList.innerHTML = '';
+
+  if (!items.length) {
+    elements.familyIndividualList.innerHTML = '<li class="family-empty">No individual expense data yet.</li>';
+    return;
+  }
+
+  items.forEach((item) => {
+    const li = document.createElement('li');
+    li.className = 'family-item';
+    li.innerHTML = `
+      <div>
+        <strong>${item.username}</strong>
+        <span>${item.email || ''}</span>
+      </div>
+      <div>
+        <strong>${formatCurrency(item.totalExpenses)}</strong>
+        <span>${item.totalEntries} entries</span>
+      </div>
+    `;
+    elements.familyIndividualList.appendChild(li);
   });
 }
 

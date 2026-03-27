@@ -533,6 +533,10 @@ body {
   font-size: 0.9rem;
 }
 
+.family-item > div:last-child {
+  text-align: right;
+}
+
 .family-empty {
   color: var(--text-secondary);
 }
