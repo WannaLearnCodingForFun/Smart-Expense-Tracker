@@ -12,6 +12,7 @@ const cors = require('cors');
 const Expense = require('./models/Expense');
 const authRoutes = require('./routes/authRoutes');
 const expenseRoutes = require('./routes/expenseRoutes');
+const familyRoutes = require('./routes/familyRoutes');
 const authMiddleware = require('./middleware/authMiddleware');
 
 const app = express();
@@ -28,6 +29,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ============ Routes ============
 app.use('/api/auth', authRoutes);
 app.use('/api/expenses', authMiddleware, expenseRoutes);
+app.use('/api/family', familyRoutes);
 
 if (process.env.NODE_ENV !== 'production') {
   app.get('/api/debug/all-expenses', async (req, res, next) => {

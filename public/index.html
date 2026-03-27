@@ -171,6 +171,30 @@
         </table>
       </div>
     </section>
+
+    <section class="family-section">
+      <h2 class="section-title">Family Monitor</h2>
+      <div class="family-grid">
+        <div class="family-card">
+          <h3>Add Family Member</h3>
+          <div class="family-add-row">
+            <input type="email" id="familyEmail" placeholder="member@example.com">
+            <button id="addFamilyBtn" class="btn btn-primary">Add</button>
+          </div>
+          <p class="family-help">Add by email to include their expenses in family monitoring.</p>
+        </div>
+
+        <div class="family-card">
+          <h3>Family Summary</h3>
+          <p id="familySummaryText">Family size: 1 | Combined expenses: $0.00</p>
+        </div>
+      </div>
+
+      <div class="family-card">
+        <h3>Members</h3>
+        <ul id="familyList" class="family-list"></ul>
+      </div>
+    </section>
   </main>
   <div id="toastContainer" class="toast-container"></div>
 

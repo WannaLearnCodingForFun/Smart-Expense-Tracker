@@ -40,6 +40,10 @@ const elements = {
   exportCsv: document.getElementById('exportCsv'),
   logoutBtn: document.getElementById('logoutBtn'),
   welcomeUser: document.getElementById('welcomeUser'),
+  familyEmail: document.getElementById('familyEmail'),
+  addFamilyBtn: document.getElementById('addFamilyBtn'),
+  familyList: document.getElementById('familyList'),
+  familySummaryText: document.getElementById('familySummaryText'),
   toastContainer: document.getElementById('toastContainer')
 };
 
@@ -56,6 +60,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initCharts();
   loadExpenses();
   loadStats();
+  loadFamilyMembers();
+  loadFamilySummary();
   setupEventListeners();
 });
 
@@ -199,6 +205,9 @@ function setupEventListeners() {
   elements.exportCsv.addEventListener('click', exportToCsv);
   if (elements.logoutBtn) {
     elements.logoutBtn.addEventListener('click', logout);
+  }
+  if (elements.addFamilyBtn) {
+    elements.addFamilyBtn.addEventListener('click', handleAddFamilyMember);
   }
 }
 
@@ -578,4 +587,111 @@ function showToast(message, type = 'info') {
     toast.style.animation = 'slideIn 0.3s ease reverse';
     setTimeout(() => toast.remove(), 300);
   }, 3000);
+}
+
+// ============ Family Monitor ============
+
+async function fetchFamilyMembers() {
+  const res = await authFetch('/api/family');
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to fetch family members');
+  return data.family || [];
+}
+
+async function fetchFamilySummary() {
+  const res = await authFetch('/api/family/summary/expenses');
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to fetch family summary');
+  return data;
+}
+
+async function addFamilyMember(email) {
+  const res = await authFetch('/api/family/add', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to add family member');
+  return data;
+}
+
+async function removeFamilyMember(memberId) {
+  const res = await authFetch(`/api/family/${memberId}`, { method: 'DELETE' });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to remove family member');
+  return data;
+}
+
+async function loadFamilyMembers() {
+  if (!elements.familyList) return;
+  try {
+    const members = await fetchFamilyMembers();
+    renderFamilyMembers(members);
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
+
+async function loadFamilySummary() {
+  if (!elements.familySummaryText) return;
+  try {
+    const summary = await fetchFamilySummary();
+    elements.familySummaryText.textContent =
+      `Family size: ${summary.familySize} | Combined expenses: ${formatCurrency(summary.totalExpenses)} | Entries: ${summary.totalEntries}`;
+  } catch (error) {
+    elements.familySummaryText.textContent = 'Unable to load family summary.';
+  }
+}
+
+function renderFamilyMembers(members) {
+  elements.familyList.innerHTML = '';
+  if (!members.length) {
+    elements.familyList.innerHTML = '<li class="family-empty">No family members added yet.</li>';
+    return;
+  }
+
+  members.forEach((member) => {
+    const li = document.createElement('li');
+    li.className = 'family-item';
+    li.innerHTML = `
+      <div>
+        <strong>${member.username}</strong>
+        <span>${member.email}</span>
+      </div>
+      <button class="btn btn-outline btn-small family-remove-btn" data-id="${member._id}">Remove</button>
+    `;
+    elements.familyList.appendChild(li);
+  });
+
+  document.querySelectorAll('.family-remove-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      try {
+        await removeFamilyMember(btn.dataset.id);
+        showToast('Family member removed.', 'success');
+        loadFamilyMembers();
+        loadFamilySummary();
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    });
+  });
+}
+
+async function handleAddFamilyMember() {
+  const email = (elements.familyEmail?.value || '').trim();
+  if (!email) {
+    showToast('Please enter an email.', 'error');
+    return;
+  }
+
+  try {
+    await addFamilyMember(email);
+    elements.familyEmail.value = '';
+    showToast('Family member added.', 'success');
+    loadFamilyMembers();
+    loadFamilySummary();
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
 }

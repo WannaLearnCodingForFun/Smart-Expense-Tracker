@@ -22,9 +22,17 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Password is required'],
       minlength: [6, 'Password must be at least 6 characters']
-    }
+    },
+    family: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+      }
+    ]
   },
-  { timestamps: true }
+  {
+    timestamps: true
+  }
 );
 
 userSchema.pre('save', async function hashPassword(next) {
